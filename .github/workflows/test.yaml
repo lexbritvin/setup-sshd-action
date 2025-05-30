@@ -1,0 +1,27 @@
+name: Test SSH Server Action
+on: [ push, pull_request ]
+
+jobs:
+  test-ssh:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Server
+        id: ssh
+        uses: ./
+        with:
+          port: 2222
+          use-actor-ssh-keys: true
+          public-keys: |
+            ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDmPzoKAwVTtyMwSTBypeUL1HCZdeBYoOKhRmVLsGeB+MV2HyuiANDszGm14RzcL3SfxdK8wsuukhWBuoefjnytpseuw2+s+ewEM3NdR7f/gvl2Ogkyub/B1zAjr+qCsO/v0X3pS2hQL3AHmaeovussxZZ2uie+VurfH9TC8Ks9nSx5jL1d5ABgWsdRwLRgfazEC8flXwUBTv6Ub4SgNYpN5FgX7wafeuE4pG3fU1QT/V/fELjEfVYGCiXsD1z/ePozMROmMPNPURt5JkcTcHbdTBnoCNg9jJzVp4JS88BvxAQwHzbkuM1PPVOKaf5jsJhlPF9uqIBkpkdFzCoqmKe2kCR7E16iQDgKhymLLoRbYCIEjatZPCIaxTTLDDt4k3r0/ia1VseLDpgs4FPkorg23gPCXhSXTsV/Pw9PnaNDd/m6VTo3xFzBZ1RvL/lnYiZCADJrPTf4+juFOyEBa/QKSYexjHykViRDkGM+Q67NGsyNDtk9+zpisK8Ern7oIWegKjJxZtXmCUtZ1MJJkZKIUogzOKBkrjK0eEqSzJg/1gEY19YgkW4W4EnnRmEZD9Hn064+w+c/LdAuA36sKZWEz5Xv4zpv4UNjA/KH8US7qZRHf1B/zKP8g+Q0GPTGn+xCBPi6Ke/QSNiN6BGPd0I7eQawAklecmdc6U4QbJGPmQ==
+
+      - name: Verify SSH Server
+        run: |
+          echo "SSH server is running on ${{ steps.ssh.outputs.hostname }}:${{ steps.ssh.outputs.port }}"
+          echo "SSH username: ${{ steps.ssh.outputs.username }}"

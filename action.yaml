@@ -25,14 +25,10 @@ inputs:
     description: 'Authorized public keys (one per line)'
     required: false
 
-  use-github-keys:
-    description: 'Fetch and use GitHub actor SSH keys'
+  use-actor-ssh-keys:
+    description: 'Whether to authorize the public SSH keys of the user triggering the workflow'
     required: false
     default: 'false'
-
-  github-actor:
-    description: 'GitHub username to fetch keys from (defaults to GITHUB_ACTOR)'
-    required: false
 
 outputs:
   hostname:

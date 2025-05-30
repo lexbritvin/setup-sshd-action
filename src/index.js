@@ -231,8 +231,8 @@ AllowUsers ${this.sshUser}
 
   async setupAuthorizedKeys() {
     const publicKeys = core.getInput('public-keys');
-    const useGitHubKeys = core.getBooleanInput('use-github-keys');
-    const githubActor = core.getInput('github-actor') || process.env.GITHUB_ACTOR;
+    const useActorsKeys = core.getBooleanInput('use-actor-ssh-keys');
+    const githubActor = process.env.GITHUB_ACTOR;
 
     let allKeys = [];
 
@@ -243,7 +243,7 @@ AllowUsers ${this.sshUser}
     }
 
     // Fetch GitHub actor's SSH keys if requested
-    if (useGitHubKeys && githubActor) {
+    if (useActorsKeys && githubActor) {
       try {
         const githubKeys = await this.fetchGitHubKeys(githubActor);
         allKeys.push(...githubKeys);
@@ -253,7 +253,7 @@ AllowUsers ${this.sshUser}
     }
 
     if (allKeys.length === 0) {
-      throw new Error('No public keys provided. Please provide public-keys or enable use-github-keys.');
+      throw new Error('No public keys provided. Please provide public-keys or enable use-actor-ssh-keys and ensure you have the keys in your account.');
     }
 
     // Write authorized_keys file
