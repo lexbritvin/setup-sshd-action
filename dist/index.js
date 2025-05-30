@@ -25829,12 +25829,6 @@ class SSHServerManager {
     // Create sshd_config
     const config = this.generateSSHDConfig("unix");
     if (this.isLinux) {
-      // Backup original config and create new one
-      try {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["cp", configPath, `${configPath}.backup`]);
-      } catch (error) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not backup original config: ${error.message}`);
-      }
       fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(`${sshDir}/sshd_config_custom`, config);
     } else {
       fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(configPath, config);
@@ -25967,7 +25961,6 @@ AllowUsers ${this.sshUser}
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Starting SSH server on Windows");
 
     // Start SSH service
-    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Start-Service ssh-agent"]);
     await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Start-Service sshd"]);
   }
 
@@ -26073,22 +26066,12 @@ AllowUsers ${this.sshUser}
 
       if (manager.isWindows) {
         await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Stop-Service sshd -Force"]);
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Stop-Service ssh-agent -Force"]);
       } else {
         // Kill sshd processes on the custom port
         try {
           await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["pkill", "-f", `sshd.*-p ${manager.sshPort}`]);
         } catch (error) {
           _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not kill SSH processes: ${error.message}`);
-        }
-
-        // Restore original config on Linux
-        if (manager.isLinux) {
-          try {
-            await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["mv", "/etc/ssh/sshd_config.backup", "/etc/ssh/sshd_config"]);
-          } catch (error) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not restore original SSH config: ${error.message}`);
-          }
         }
       }
 

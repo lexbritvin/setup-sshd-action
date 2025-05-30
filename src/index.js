@@ -166,12 +166,6 @@ class SSHServerManager {
     // Create sshd_config
     const config = this.generateSSHDConfig("unix");
     if (this.isLinux) {
-      // Backup original config and create new one
-      try {
-        await exec.exec("sudo", ["cp", configPath, `${configPath}.backup`]);
-      } catch (error) {
-        core.warning(`Could not backup original config: ${error.message}`);
-      }
       fs.writeFileSync(`${sshDir}/sshd_config_custom`, config);
     } else {
       fs.writeFileSync(configPath, config);
@@ -304,7 +298,6 @@ AllowUsers ${this.sshUser}
     core.info("Starting SSH server on Windows");
 
     // Start SSH service
-    await exec.exec("powershell", ["Start-Service ssh-agent"]);
     await exec.exec("powershell", ["Start-Service sshd"]);
   }
 
@@ -410,22 +403,12 @@ AllowUsers ${this.sshUser}
 
       if (manager.isWindows) {
         await exec.exec("powershell", ["Stop-Service sshd -Force"]);
-        await exec.exec("powershell", ["Stop-Service ssh-agent -Force"]);
       } else {
         // Kill sshd processes on the custom port
         try {
           await exec.exec("sudo", ["pkill", "-f", `sshd.*-p ${manager.sshPort}`]);
         } catch (error) {
           core.warning(`Could not kill SSH processes: ${error.message}`);
-        }
-
-        // Restore original config on Linux
-        if (manager.isLinux) {
-          try {
-            await exec.exec("sudo", ["mv", "/etc/ssh/sshd_config.backup", "/etc/ssh/sshd_config"]);
-          } catch (error) {
-            core.warning(`Could not restore original SSH config: ${error.message}`);
-          }
         }
       }
 
