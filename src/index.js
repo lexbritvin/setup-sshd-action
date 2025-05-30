@@ -298,12 +298,8 @@ AllowUsers ${this.sshUser}
     core.info("Starting SSH server on Windows");
 
     // Start SSH service
+    await exec.exec("powershell", ["Start-Service ssh-agent"]);
     await exec.exec("powershell", ["Start-Service sshd"]);
-
-    // Enable service for auto-start
-    await exec.exec("Set-Service", [
-      "-Name", "sshd", "-StartupType", "Automatic",
-    ]);
   }
 
   async startMacOSSSH() {
@@ -418,7 +414,7 @@ AllowUsers ${this.sshUser}
 
       if (manager.isWindows) {
         await exec.exec("powershell", ["Stop-Service sshd -Force"]);
-        await exec.exec("powershell", ["Set-Service -Name sshd -StartupType Disabled"]);
+        await exec.exec("powershell", ["Stop-Service ssh-agent -Force"]);
       } else {
         // Kill sshd processes on the custom port
         try {

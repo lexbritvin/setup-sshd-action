@@ -25961,12 +25961,8 @@ AllowUsers ${this.sshUser}
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Starting SSH server on Windows");
 
     // Start SSH service
+    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Start-Service ssh-agent"]);
     await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Start-Service sshd"]);
-
-    // Enable service for auto-start
-    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Set-Service", [
-      "-Name", "sshd", "-StartupType", "Automatic",
-    ]);
   }
 
   async startMacOSSSH() {
@@ -26081,7 +26077,7 @@ AllowUsers ${this.sshUser}
 
       if (manager.isWindows) {
         await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Stop-Service sshd -Force"]);
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Set-Service -Name sshd -StartupType Disabled"]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Stop-Service ssh-agent -Force"]);
       } else {
         // Kill sshd processes on the custom port
         try {
