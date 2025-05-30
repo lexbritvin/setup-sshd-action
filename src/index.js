@@ -298,7 +298,7 @@ AllowUsers ${this.sshUser}
     core.info("Starting SSH server on Windows");
 
     // Start SSH service
-    await exec.exec("Start-Service", ["sshd"]);
+    await exec.exec("powershell", ["Start-Service sshd"]);
 
     // Enable service for auto-start
     await exec.exec("Set-Service", [
@@ -350,8 +350,8 @@ AllowUsers ${this.sshUser}
   async verifySSHServer() {
     try {
       if (this.isWindows) {
-        await exec.exec("Test-NetConnection", [
-          "-ComputerName", "localhost", "-Port", `${this.sshPort}`,
+        await exec.exec("", [
+          `Test-NetConnection -ComputerName localhost -Port ${this.sshPort}`,
         ]);
       } else {
         await exec.exec("nc", ["-z", "localhost", this.sshPort]);
@@ -417,8 +417,8 @@ AllowUsers ${this.sshUser}
       core.info("Cleaning up SSH server...");
 
       if (manager.isWindows) {
-        await exec.exec("Stop-Service", ["sshd", "-Force"]);
-        await exec.exec("Set-Service", ["-Name", "sshd", "-StartupType", "Disabled"]);
+        await exec.exec("powershell", ["Stop-Service sshd -Force"]);
+        await exec.exec("powershell", ["Set-Service -Name sshd -StartupType Disabled"]);
       } else {
         // Kill sshd processes on the custom port
         try {

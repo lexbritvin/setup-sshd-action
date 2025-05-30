@@ -25961,7 +25961,7 @@ AllowUsers ${this.sshUser}
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Starting SSH server on Windows");
 
     // Start SSH service
-    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Start-Service", ["sshd"]);
+    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Start-Service sshd"]);
 
     // Enable service for auto-start
     await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Set-Service", [
@@ -26013,8 +26013,8 @@ AllowUsers ${this.sshUser}
   async verifySSHServer() {
     try {
       if (this.isWindows) {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Test-NetConnection", [
-          "-ComputerName", "localhost", "-Port", `${this.sshPort}`,
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("", [
+          `Test-NetConnection -ComputerName localhost -Port ${this.sshPort}`,
         ]);
       } else {
         await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("nc", ["-z", "localhost", this.sshPort]);
@@ -26080,8 +26080,8 @@ AllowUsers ${this.sshUser}
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Cleaning up SSH server...");
 
       if (manager.isWindows) {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Stop-Service", ["sshd", "-Force"]);
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Set-Service", ["-Name", "sshd", "-StartupType", "Disabled"]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Stop-Service sshd -Force"]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", ["Set-Service -Name sshd -StartupType Disabled"]);
       } else {
         // Kill sshd processes on the custom port
         try {
