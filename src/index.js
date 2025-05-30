@@ -143,14 +143,10 @@ class SSHServerManager {
 
     // Generate or use provided server key
     if (serverKey) {
-      const keyPath = path.join(sshDir, 'ssh_host_rsa_key');
+      const keyPath = path.join(sshDir, 'ssh_host_ed25519_key');
       fs.writeFileSync(keyPath, serverKey, { mode: 0o600 });
     } else {
-      // Generate host keys
-      await exec.exec('powershell', [
-        '-Command',
-        `ssh-keygen -t rsa -f "${path.join(sshDir, 'ssh_host_rsa_key')}" -N ""`
-      ]);
+      await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
@@ -160,13 +156,13 @@ class SSHServerManager {
 
   async configureUnixSSH(serverKey, sshDir) {
     const configPath = this.isLinux ? '/etc/ssh/sshd_config' : path.join(sshDir, 'sshd_config');
-    const hostKeyPath = path.join(sshDir, 'ssh_host_rsa_key');
 
     // Generate or use provided server key
     if (serverKey) {
+      const hostKeyPath = path.join(sshDir, 'ssh_host_ed25519_key');
       fs.writeFileSync(hostKeyPath, serverKey, { mode: 0o600 });
     } else {
-      await exec.exec('ssh-keygen', ['-t', 'rsa', '-f', hostKeyPath, '-N', '']);
+      await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
@@ -186,9 +182,10 @@ class SSHServerManager {
 
   generateSSHDConfig(platform) {
     const sshDir = this.getSSHDirectory();
-    const hostKeyPath = platform === 'windows'
-      ? 'C:\\ProgramData\\ssh\\ssh_host_rsa_key'
-      : path.join(sshDir, 'ssh_host_rsa_key');
+
+    const ed25519KeyPath = platform === 'windows'
+      ? 'C:\\ProgramData\\ssh\\ssh_host_ed25519_key'
+      : path.join(sshDir, 'ssh_host_ed25519_key');
 
     const authorizedKeysPath = platform === 'windows'
       ? 'C:\\ProgramData\\ssh\\authorized_keys'
@@ -198,7 +195,7 @@ class SSHServerManager {
 # GitHub Actions SSH Server Configuration
 Port ${this.sshPort}
 Protocol 2
-HostKey ${hostKeyPath}
+HostKey ${ed25519KeyPath}
 AuthorizedKeysFile ${authorizedKeysPath}
 
 # Security settings
@@ -343,6 +340,13 @@ AllowUsers ${this.sshUser}
     const sshDir = this.getSSHDirectory();
     const configPath = path.join(sshDir, 'sshd_config_custom');
 
+    // Create privilege separation directory if it doesn't exist
+    try {
+      await exec.exec('sudo', ['mkdir', '-p', '/run/sshd']);
+    } catch (error) {
+      core.warning(`Could not create privilege separation directory: ${error.message}`);
+    }
+
     // Start sshd with custom config
     await exec.exec('sudo', [
       '/usr/sbin/sshd',
@@ -396,6 +400,32 @@ AllowUsers ${this.sshUser}
       return 'C:\\ProgramData\\ssh\\authorized_keys';
     }
     return path.join(this.getSSHDirectory(), 'authorized_keys');
+  }
+
+  // Add this method to the SSHServerManager class to generate ED25519 keys
+  async generateServerKeys(sshDir) {
+    core.info('Generating SSH server keys');
+    
+    try {
+      // Generate ED25519 key
+      const edKeyPath = path.join(sshDir, 'ssh_host_ed25519_key');
+      if (this.isWindows) {
+        // Generate host keys
+        await exec.exec('powershell', [
+          '-Command',
+          `ssh-keygen -t ed25519 -f "${edKeyPath}" -N ""`
+        ]);
+      } else {
+        await exec.exec('ssh-keygen', ['-t', 'ed25519', '-f', edKeyPath, '-N', '']);
+        await exec.exec('chmod', ['600', edKeyPath]);
+        await exec.exec('chmod', ['644', `${edKeyPath}.pub`]);
+      }
+
+      core.info('Generated ED25519 server key');
+    } catch (error) {
+      core.warning(`Error generating server keys: ${error.message}`);
+      throw error;
+    }
   }
 
   // Post-action cleanup

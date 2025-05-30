@@ -25806,14 +25806,10 @@ class SSHServerManager {
 
     // Generate or use provided server key
     if (serverKey) {
-      const keyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_rsa_key');
+      const keyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
       fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(keyPath, serverKey, { mode: 0o600 });
     } else {
-      // Generate host keys
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-        '-Command',
-        `ssh-keygen -t rsa -f "${path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_rsa_key')}" -N ""`
-      ]);
+      await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
@@ -25823,13 +25819,13 @@ class SSHServerManager {
 
   async configureUnixSSH(serverKey, sshDir) {
     const configPath = this.isLinux ? '/etc/ssh/sshd_config' : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'sshd_config');
-    const hostKeyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_rsa_key');
 
     // Generate or use provided server key
     if (serverKey) {
+      const hostKeyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
       fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(hostKeyPath, serverKey, { mode: 0o600 });
     } else {
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('ssh-keygen', ['-t', 'rsa', '-f', hostKeyPath, '-N', '']);
+      await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
@@ -25849,9 +25845,10 @@ class SSHServerManager {
 
   generateSSHDConfig(platform) {
     const sshDir = this.getSSHDirectory();
-    const hostKeyPath = platform === 'windows'
-      ? 'C:\\ProgramData\\ssh\\ssh_host_rsa_key'
-      : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_rsa_key');
+
+    const ed25519KeyPath = platform === 'windows'
+      ? 'C:\\ProgramData\\ssh\\ssh_host_ed25519_key'
+      : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
 
     const authorizedKeysPath = platform === 'windows'
       ? 'C:\\ProgramData\\ssh\\authorized_keys'
@@ -25861,7 +25858,7 @@ class SSHServerManager {
 # GitHub Actions SSH Server Configuration
 Port ${this.sshPort}
 Protocol 2
-HostKey ${hostKeyPath}
+HostKey ${ed25519KeyPath}
 AuthorizedKeysFile ${authorizedKeysPath}
 
 # Security settings
@@ -26006,6 +26003,13 @@ AllowUsers ${this.sshUser}
     const sshDir = this.getSSHDirectory();
     const configPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'sshd_config_custom');
 
+    // Create privilege separation directory if it doesn't exist
+    try {
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['mkdir', '-p', '/run/sshd']);
+    } catch (error) {
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not create privilege separation directory: ${error.message}`);
+    }
+
     // Start sshd with custom config
     await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', [
       '/usr/sbin/sshd',
@@ -26059,6 +26063,32 @@ AllowUsers ${this.sshUser}
       return 'C:\\ProgramData\\ssh\\authorized_keys';
     }
     return path__WEBPACK_IMPORTED_MODULE_3__.join(this.getSSHDirectory(), 'authorized_keys');
+  }
+
+  // Add this method to the SSHServerManager class to generate ED25519 keys
+  async generateServerKeys(sshDir) {
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Generating SSH server keys');
+    
+    try {
+      // Generate ED25519 key
+      const edKeyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
+      if (this.isWindows) {
+        // Generate host keys
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
+          '-Command',
+          `ssh-keygen -t ed25519 -f "${edKeyPath}" -N ""`
+        ]);
+      } else {
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('ssh-keygen', ['-t', 'ed25519', '-f', edKeyPath, '-N', '']);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('chmod', ['600', edKeyPath]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('chmod', ['644', `${edKeyPath}.pub`]);
+      }
+
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Generated ED25519 server key');
+    } catch (error) {
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Error generating server keys: ${error.message}`);
+      throw error;
+    }
   }
 
   // Post-action cleanup
