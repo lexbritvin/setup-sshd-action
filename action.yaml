@@ -1,0 +1,50 @@
+name: 'Cross-Platform SSH Server'
+description: 'Sets up an SSH server on Windows, Linux, or macOS with configurable keys and automatic cleanup'
+author: 'GitHub Actions'
+
+branding:
+  icon: 'server'
+  color: 'blue'
+
+inputs:
+  port:
+    description: 'SSH server port (default: 2222)'
+    required: false
+    default: '2222'
+
+  ssh-user:
+    description: 'SSH username (default: runner)'
+    required: false
+    default: 'runner'
+
+  server-key:
+    description: 'SSH server private key (optional - will generate if not provided)'
+    required: false
+
+  public-keys:
+    description: 'Authorized public keys (one per line)'
+    required: false
+
+  use-github-keys:
+    description: 'Fetch and use GitHub actor SSH keys'
+    required: false
+    default: 'false'
+
+  github-actor:
+    description: 'GitHub username to fetch keys from (defaults to GITHUB_ACTOR)'
+    required: false
+
+outputs:
+  hostname:
+    description: 'SSH server hostname'
+
+  port:
+    description: 'SSH server port'
+
+  username:
+    description: 'SSH username'
+
+runs:
+  using: 'node20'
+  main: 'index.js'
+  post: 'index.js'
