@@ -1,6 +1,5 @@
 name: 'Cross-Platform SSH Server'
 description: 'Sets up an SSH server on Windows, Linux, or macOS with configurable keys and automatic cleanup'
-author: 'GitHub Actions'
 
 branding:
   icon: 'server'
@@ -42,5 +41,5 @@ outputs:
 
 runs:
   using: 'node20'
-  main: 'index.js'
-  post: 'index.js'
+  main: 'dist/index.js'
+  post: 'dist/index.js'
