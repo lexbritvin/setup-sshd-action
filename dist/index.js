@@ -25672,11 +25672,11 @@ __nccwpck_require__.r(__webpack_exports__);
 class SSHServerManager {
   constructor() {
     this.platform = process.platform;
-    this.isWindows = this.platform === 'win32';
-    this.isMacOS = this.platform === 'darwin';
-    this.isLinux = this.platform === 'linux';
-    this.sshPort = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('port') || '2222';
-    this.sshUser = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('ssh-user') || 'runner';
+    this.isWindows = this.platform === "win32";
+    this.isMacOS = this.platform === "darwin";
+    this.isLinux = this.platform === "linux";
+    this.sshPort = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("port") || "2222";
+    this.sshUser = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("ssh-user") || "runner";
   }
 
   async run() {
@@ -25698,7 +25698,7 @@ class SSHServerManager {
       // Export connection info
       this.exportConnectionInfo();
 
-      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('SSH server setup completed successfully');
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("SSH server setup completed successfully");
     } catch (error) {
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`SSH server setup failed: ${error.message}`);
     }
@@ -25715,24 +25715,16 @@ class SSHServerManager {
   }
 
   async installWindowsSSH() {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Installing OpenSSH Server on Windows');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Installing OpenSSH Server on Windows");
     try {
-      // Check if OpenSSH is already installed
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-        '-Command',
-        'Get-WindowsCapability -Online | Where-Object Name -like "OpenSSH.Server*"'
-      ]);
-
       // Install OpenSSH Server
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-        '-Command',
-        'Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0'
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Add-WindowsCapability", [
+        "-Online", "-Name", "OpenSSH.Server",
       ]);
 
       // Install OpenSSH Client (if needed)
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-        '-Command',
-        'Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0'
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Add-WindowsCapability", [
+        "-Online", "-Name", "OpenSSH.Client",
       ]);
 
     } catch (error) {
@@ -25741,28 +25733,28 @@ class SSHServerManager {
   }
 
   async installMacOSSSH() {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Configuring SSH on macOS (built-in)');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Configuring SSH on macOS (built-in)");
     // SSH is built into macOS, just ensure it's available
     try {
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('which', ['sshd']);
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("which", ["sshd"]);
     } catch (error) {
-      throw new Error('SSH daemon not found on macOS');
+      throw new Error("SSH daemon not found on macOS");
     }
   }
 
   async installLinuxSSH() {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Installing OpenSSH Server on Linux');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Installing OpenSSH Server on Linux");
     try {
       // Try different package managers
       const distro = await this.getLinuxDistro();
 
-      if (distro.includes('ubuntu') || distro.includes('debian')) {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['apt-get', 'update']);
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['apt-get', 'install', '-y', 'openssh-server']);
-      } else if (distro.includes('centos') || distro.includes('rhel') || distro.includes('fedora')) {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['yum', 'install', '-y', 'openssh-server']);
-      } else if (distro.includes('alpine')) {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['apk', 'add', 'openssh-server']);
+      if (distro.includes("ubuntu") || distro.includes("debian")) {
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["apt-get", "update"]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["apt-get", "install", "-y", "openssh-server"]);
+      } else if (distro.includes("centos") || distro.includes("rhel") || distro.includes("fedora")) {
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["yum", "install", "-y", "openssh-server"]);
+      } else if (distro.includes("alpine")) {
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["apk", "add", "openssh-server"]);
       }
     } catch (error) {
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Linux SSH installation warning: ${error.message}`);
@@ -25771,15 +25763,15 @@ class SSHServerManager {
 
   async getLinuxDistro() {
     try {
-      const output = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.getExecOutput('cat', ['/etc/os-release']);
+      const output = await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.getExecOutput("cat", ["/etc/os-release"]);
       return output.stdout.toLowerCase();
     } catch {
-      return 'unknown';
+      return "unknown";
     }
   }
 
   async configureSSHServer() {
-    const serverKey = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('server-key');
+    const serverKey = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("server-key");
     const sshDir = this.getSSHDirectory();
 
     // Ensure SSH directory exists
@@ -25796,8 +25788,8 @@ class SSHServerManager {
   }
 
   async configureWindowsSSH(serverKey) {
-    const sshDir = 'C:\\ProgramData\\ssh';
-    const configPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'sshd_config');
+    const sshDir = "C:\\ProgramData\\ssh";
+    const configPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "sshd_config");
 
     // Create SSH directory if it doesn't exist
     if (!fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(sshDir)) {
@@ -25806,34 +25798,34 @@ class SSHServerManager {
 
     // Generate or use provided server key
     if (serverKey) {
-      const keyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
+      const keyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "ssh_host_ed25519_key");
       fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(keyPath, serverKey, { mode: 0o600 });
     } else {
       await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
-    const config = this.generateSSHDConfig('windows');
+    const config = this.generateSSHDConfig("windows");
     fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(configPath, config);
   }
 
   async configureUnixSSH(serverKey, sshDir) {
-    const configPath = this.isLinux ? '/etc/ssh/sshd_config' : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'sshd_config');
+    const configPath = this.isLinux ? "/etc/ssh/sshd_config" : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "sshd_config");
 
     // Generate or use provided server key
     if (serverKey) {
-      const hostKeyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
+      const hostKeyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "ssh_host_ed25519_key");
       fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(hostKeyPath, serverKey, { mode: 0o600 });
     } else {
       await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
-    const config = this.generateSSHDConfig('unix');
+    const config = this.generateSSHDConfig("unix");
     if (this.isLinux) {
       // Backup original config and create new one
       try {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['cp', configPath, `${configPath}.backup`]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["cp", configPath, `${configPath}.backup`]);
       } catch (error) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not backup original config: ${error.message}`);
       }
@@ -25846,13 +25838,13 @@ class SSHServerManager {
   generateSSHDConfig(platform) {
     const sshDir = this.getSSHDirectory();
 
-    const ed25519KeyPath = platform === 'windows'
-      ? 'C:\\ProgramData\\ssh\\ssh_host_ed25519_key'
-      : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
+    const ed25519KeyPath = platform === "windows"
+      ? "C:\\ProgramData\\ssh\\ssh_host_ed25519_key"
+      : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "ssh_host_ed25519_key");
 
-    const authorizedKeysPath = platform === 'windows'
-      ? 'C:\\ProgramData\\ssh\\authorized_keys'
-      : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'authorized_keys');
+    const authorizedKeysPath = platform === "windows"
+      ? "C:\\ProgramData\\ssh\\authorized_keys"
+      : path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "authorized_keys");
 
     return `
 # GitHub Actions SSH Server Configuration
@@ -25866,7 +25858,7 @@ PermitRootLogin no
 PasswordAuthentication no
 PubkeyAuthentication yes
 ChallengeResponseAuthentication no
-UsePAM ${platform === 'windows' ? 'no' : 'yes'}
+UsePAM ${platform === "windows" ? "no" : "yes"}
 
 # Logging
 SyslogFacility AUTH
@@ -25890,15 +25882,15 @@ AllowUsers ${this.sshUser}
   }
 
   async setupAuthorizedKeys() {
-    const publicKeys = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('public-keys');
-    const useActorsKeys = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getBooleanInput('use-actor-ssh-keys');
+    const publicKeys = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("public-keys");
+    const useActorsKeys = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getBooleanInput("use-actor-ssh-keys");
     const githubActor = process.env.GITHUB_ACTOR;
 
     let allKeys = [];
 
     // Add provided public keys
     if (publicKeys) {
-      const keys = publicKeys.split('\n').filter(key => key.trim());
+      const keys = publicKeys.split("\n").filter(key => key.trim());
       allKeys.push(...keys);
     }
 
@@ -25913,12 +25905,12 @@ AllowUsers ${this.sshUser}
     }
 
     if (allKeys.length === 0) {
-      throw new Error('No public keys provided. Please provide public-keys or enable use-actor-ssh-keys and ensure you have the keys in your account.');
+      throw new Error("No public keys provided. Please provide public-keys or enable use-actor-ssh-keys and ensure you have the keys in your account.");
     }
 
     // Write authorized_keys file
     const authorizedKeysPath = this.getAuthorizedKeysPath();
-    const authorizedKeysContent = allKeys.join('\n') + '\n';
+    const authorizedKeysContent = allKeys.join("\n") + "\n";
 
     // Ensure directory exists
     const dir = path__WEBPACK_IMPORTED_MODULE_3__.dirname(authorizedKeysPath);
@@ -25935,17 +25927,17 @@ AllowUsers ${this.sshUser}
 
     return new Promise((resolve, reject) => {
       https__WEBPACK_IMPORTED_MODULE_5__.get(url, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
+        let data = "";
+        res.on("data", chunk => data += chunk);
+        res.on("end", () => {
           if (res.statusCode === 200) {
-            const keys = data.trim().split('\n').filter(key => key.trim());
+            const keys = data.trim().split("\n").filter(key => key.trim());
             resolve(keys);
           } else {
             reject(new Error(`GitHub API returned ${res.statusCode}`));
           }
         });
-      }).on('error', reject);
+      }).on("error", reject);
     });
   }
 
@@ -25966,71 +25958,66 @@ AllowUsers ${this.sshUser}
   }
 
   async startWindowsSSH() {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Starting SSH server on Windows');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Starting SSH server on Windows");
 
     // Start SSH service
-    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-      '-Command',
-      'Start-Service sshd'
-    ]);
+    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Start-Service", ["sshd"]);
 
     // Enable service for auto-start
-    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-      '-Command',
-      'Set-Service -Name sshd -StartupType Automatic'
+    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Set-Service", [
+      "-Name", "sshd", "-StartupType", "Automatic",
     ]);
   }
 
   async startMacOSSSH() {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Starting SSH server on macOS');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Starting SSH server on macOS");
     const sshDir = this.getSSHDirectory();
-    const configPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'sshd_config');
+    const configPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "sshd_config");
 
     // Start sshd with custom config
-    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', [
-      '/usr/sbin/sshd',
-      '-D',
-      '-f', configPath,
-      '-p', this.sshPort
+    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", [
+      "/usr/sbin/sshd",
+      "-D",
+      "-f", configPath,
+      "-p", this.sshPort,
     ], {
       detached: true,
-      stdio: 'ignore'
+      stdio: "ignore",
     });
   }
 
   async startLinuxSSH() {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Starting SSH server on Linux');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Starting SSH server on Linux");
     const sshDir = this.getSSHDirectory();
-    const configPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'sshd_config_custom');
+    const configPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "sshd_config_custom");
 
     // Create privilege separation directory if it doesn't exist
     try {
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['mkdir', '-p', '/run/sshd']);
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["mkdir", "-p", "/run/sshd"]);
     } catch (error) {
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not create privilege separation directory: ${error.message}`);
     }
 
     // Start sshd with custom config
-    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', [
-      '/usr/sbin/sshd',
-      '-D',
-      '-f', configPath,
-      '-p', this.sshPort
+    await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", [
+      "/usr/sbin/sshd",
+      "-D",
+      "-f", configPath,
+      "-p", this.sshPort,
     ], {
       detached: true,
-      stdio: 'ignore'
+      stdio: "ignore",
     });
   }
 
   async verifySSHServer() {
     try {
       if (this.isWindows) {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-          '-Command',
-          `Test-NetConnection -ComputerName localhost -Port ${this.sshPort}`
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Test-NetConnection", [
+          "-ComputerName", "localhost", "-Port", `${this.sshPort}`,
         ]);
       } else {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('nc', ['-z', 'localhost', this.sshPort]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("nc", ["-z", "localhost", this.sshPort]);
       }
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`SSH server is running on port ${this.sshPort}`);
     } catch (error) {
@@ -26039,10 +26026,10 @@ AllowUsers ${this.sshUser}
   }
 
   exportConnectionInfo() {
-    const hostname = 'localhost';
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('hostname', hostname);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('port', this.sshPort);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('username', this.sshUser);
+    const hostname = "localhost";
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("hostname", hostname);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("port", this.sshPort);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("username", this.sshUser);
 
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`SSH Connection Info:`);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`  Host: ${hostname}`);
@@ -26053,38 +26040,32 @@ AllowUsers ${this.sshUser}
 
   getSSHDirectory() {
     if (this.isWindows) {
-      return 'C:\\ProgramData\\ssh';
+      return "C:\\ProgramData\\ssh";
     }
-    return path__WEBPACK_IMPORTED_MODULE_3__.join(os__WEBPACK_IMPORTED_MODULE_4__.homedir(), '.ssh');
+    return path__WEBPACK_IMPORTED_MODULE_3__.join(os__WEBPACK_IMPORTED_MODULE_4__.homedir(), ".ssh");
   }
 
   getAuthorizedKeysPath() {
     if (this.isWindows) {
-      return 'C:\\ProgramData\\ssh\\authorized_keys';
+      return "C:\\ProgramData\\ssh\\authorized_keys";
     }
-    return path__WEBPACK_IMPORTED_MODULE_3__.join(this.getSSHDirectory(), 'authorized_keys');
+    return path__WEBPACK_IMPORTED_MODULE_3__.join(this.getSSHDirectory(), "authorized_keys");
   }
 
   // Add this method to the SSHServerManager class to generate ED25519 keys
   async generateServerKeys(sshDir) {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Generating SSH server keys');
-    
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Generating SSH server keys");
+
     try {
       // Generate ED25519 key
-      const edKeyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, 'ssh_host_ed25519_key');
-      if (this.isWindows) {
-        // Generate host keys
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', [
-          '-Command',
-          `ssh-keygen -t ed25519 -f "${edKeyPath}" -N ""`
-        ]);
-      } else {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('ssh-keygen', ['-t', 'ed25519', '-f', edKeyPath, '-N', '']);
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('chmod', ['600', edKeyPath]);
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('chmod', ['644', `${edKeyPath}.pub`]);
+      const edKeyPath = path__WEBPACK_IMPORTED_MODULE_3__.join(sshDir, "ssh_host_ed25519_key");
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("ssh-keygen", ["-t", "ed25519", "-f", edKeyPath, "-N", ""]);
+      if (!this.isWindows) {
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("chmod", ["600", edKeyPath]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("chmod", ["644", `${edKeyPath}.pub`]);
       }
 
-      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Generated ED25519 server key');
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Generated ED25519 server key");
     } catch (error) {
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Error generating server keys: ${error.message}`);
       throw error;
@@ -26096,15 +26077,15 @@ AllowUsers ${this.sshUser}
     const manager = new SSHServerManager();
 
     try {
-      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Cleaning up SSH server...');
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Cleaning up SSH server...");
 
       if (manager.isWindows) {
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', ['-Command', 'Stop-Service sshd -Force']);
-        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('powershell', ['-Command', 'Set-Service -Name sshd -StartupType Disabled']);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Stop-Service", ["sshd", "-Force"]);
+        await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Set-Service", ["-Name", "sshd", "-StartupType", "Disabled"]);
       } else {
         // Kill sshd processes on the custom port
         try {
-          await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['pkill', '-f', `sshd.*-p ${manager.sshPort}`]);
+          await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["pkill", "-f", `sshd.*-p ${manager.sshPort}`]);
         } catch (error) {
           _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not kill SSH processes: ${error.message}`);
         }
@@ -26112,29 +26093,28 @@ AllowUsers ${this.sshUser}
         // Restore original config on Linux
         if (manager.isLinux) {
           try {
-            await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec('sudo', ['mv', '/etc/ssh/sshd_config.backup', '/etc/ssh/sshd_config']);
+            await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("sudo", ["mv", "/etc/ssh/sshd_config.backup", "/etc/ssh/sshd_config"]);
           } catch (error) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`Could not restore original SSH config: ${error.message}`);
           }
         }
       }
 
-      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('SSH server cleanup completed');
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("SSH server cleanup completed");
     } catch (error) {
       _actions_core__WEBPACK_IMPORTED_MODULE_0__.warning(`SSH cleanup failed: ${error.message}`);
     }
   }
 }
 
-const IsPost = !!_actions_core__WEBPACK_IMPORTED_MODULE_0__.getState('isPost');
+const IsPost = !!_actions_core__WEBPACK_IMPORTED_MODULE_0__.getState("isPost");
 
 try {
   if (!IsPost) {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.saveState('isPost', 'true')
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.saveState("isPost", "true");
     const manager = new SSHServerManager();
     await manager.run();
-  }
-  else {
+  } else {
     await SSHServerManager.cleanup();
   }
 } catch (error) {

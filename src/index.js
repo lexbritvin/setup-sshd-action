@@ -1,19 +1,19 @@
-import * as core from '@actions/core';
-import * as exec from '@actions/exec';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import * as https from 'https';
+import * as core from "@actions/core";
+import * as exec from "@actions/exec";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
+import * as https from "https";
 
 
 class SSHServerManager {
   constructor() {
     this.platform = process.platform;
-    this.isWindows = this.platform === 'win32';
-    this.isMacOS = this.platform === 'darwin';
-    this.isLinux = this.platform === 'linux';
-    this.sshPort = core.getInput('port') || '2222';
-    this.sshUser = core.getInput('ssh-user') || 'runner';
+    this.isWindows = this.platform === "win32";
+    this.isMacOS = this.platform === "darwin";
+    this.isLinux = this.platform === "linux";
+    this.sshPort = core.getInput("port") || "2222";
+    this.sshUser = core.getInput("ssh-user") || "runner";
   }
 
   async run() {
@@ -35,7 +35,7 @@ class SSHServerManager {
       // Export connection info
       this.exportConnectionInfo();
 
-      core.info('SSH server setup completed successfully');
+      core.info("SSH server setup completed successfully");
     } catch (error) {
       core.setFailed(`SSH server setup failed: ${error.message}`);
     }
@@ -52,24 +52,16 @@ class SSHServerManager {
   }
 
   async installWindowsSSH() {
-    core.info('Installing OpenSSH Server on Windows');
+    core.info("Installing OpenSSH Server on Windows");
     try {
-      // Check if OpenSSH is already installed
-      await exec.exec('powershell', [
-        '-Command',
-        'Get-WindowsCapability -Online | Where-Object Name -like "OpenSSH.Server*"'
-      ]);
-
       // Install OpenSSH Server
-      await exec.exec('powershell', [
-        '-Command',
-        'Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0'
+      await exec.exec("Add-WindowsCapability", [
+        "-Online", "-Name", "OpenSSH.Server",
       ]);
 
       // Install OpenSSH Client (if needed)
-      await exec.exec('powershell', [
-        '-Command',
-        'Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0'
+      await exec.exec("Add-WindowsCapability", [
+        "-Online", "-Name", "OpenSSH.Client",
       ]);
 
     } catch (error) {
@@ -78,28 +70,28 @@ class SSHServerManager {
   }
 
   async installMacOSSSH() {
-    core.info('Configuring SSH on macOS (built-in)');
+    core.info("Configuring SSH on macOS (built-in)");
     // SSH is built into macOS, just ensure it's available
     try {
-      await exec.exec('which', ['sshd']);
+      await exec.exec("which", ["sshd"]);
     } catch (error) {
-      throw new Error('SSH daemon not found on macOS');
+      throw new Error("SSH daemon not found on macOS");
     }
   }
 
   async installLinuxSSH() {
-    core.info('Installing OpenSSH Server on Linux');
+    core.info("Installing OpenSSH Server on Linux");
     try {
       // Try different package managers
       const distro = await this.getLinuxDistro();
 
-      if (distro.includes('ubuntu') || distro.includes('debian')) {
-        await exec.exec('sudo', ['apt-get', 'update']);
-        await exec.exec('sudo', ['apt-get', 'install', '-y', 'openssh-server']);
-      } else if (distro.includes('centos') || distro.includes('rhel') || distro.includes('fedora')) {
-        await exec.exec('sudo', ['yum', 'install', '-y', 'openssh-server']);
-      } else if (distro.includes('alpine')) {
-        await exec.exec('sudo', ['apk', 'add', 'openssh-server']);
+      if (distro.includes("ubuntu") || distro.includes("debian")) {
+        await exec.exec("sudo", ["apt-get", "update"]);
+        await exec.exec("sudo", ["apt-get", "install", "-y", "openssh-server"]);
+      } else if (distro.includes("centos") || distro.includes("rhel") || distro.includes("fedora")) {
+        await exec.exec("sudo", ["yum", "install", "-y", "openssh-server"]);
+      } else if (distro.includes("alpine")) {
+        await exec.exec("sudo", ["apk", "add", "openssh-server"]);
       }
     } catch (error) {
       core.warning(`Linux SSH installation warning: ${error.message}`);
@@ -108,15 +100,15 @@ class SSHServerManager {
 
   async getLinuxDistro() {
     try {
-      const output = await exec.getExecOutput('cat', ['/etc/os-release']);
+      const output = await exec.getExecOutput("cat", ["/etc/os-release"]);
       return output.stdout.toLowerCase();
     } catch {
-      return 'unknown';
+      return "unknown";
     }
   }
 
   async configureSSHServer() {
-    const serverKey = core.getInput('server-key');
+    const serverKey = core.getInput("server-key");
     const sshDir = this.getSSHDirectory();
 
     // Ensure SSH directory exists
@@ -133,8 +125,8 @@ class SSHServerManager {
   }
 
   async configureWindowsSSH(serverKey) {
-    const sshDir = 'C:\\ProgramData\\ssh';
-    const configPath = path.join(sshDir, 'sshd_config');
+    const sshDir = "C:\\ProgramData\\ssh";
+    const configPath = path.join(sshDir, "sshd_config");
 
     // Create SSH directory if it doesn't exist
     if (!fs.existsSync(sshDir)) {
@@ -143,34 +135,34 @@ class SSHServerManager {
 
     // Generate or use provided server key
     if (serverKey) {
-      const keyPath = path.join(sshDir, 'ssh_host_ed25519_key');
+      const keyPath = path.join(sshDir, "ssh_host_ed25519_key");
       fs.writeFileSync(keyPath, serverKey, { mode: 0o600 });
     } else {
       await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
-    const config = this.generateSSHDConfig('windows');
+    const config = this.generateSSHDConfig("windows");
     fs.writeFileSync(configPath, config);
   }
 
   async configureUnixSSH(serverKey, sshDir) {
-    const configPath = this.isLinux ? '/etc/ssh/sshd_config' : path.join(sshDir, 'sshd_config');
+    const configPath = this.isLinux ? "/etc/ssh/sshd_config" : path.join(sshDir, "sshd_config");
 
     // Generate or use provided server key
     if (serverKey) {
-      const hostKeyPath = path.join(sshDir, 'ssh_host_ed25519_key');
+      const hostKeyPath = path.join(sshDir, "ssh_host_ed25519_key");
       fs.writeFileSync(hostKeyPath, serverKey, { mode: 0o600 });
     } else {
       await this.generateServerKeys(sshDir);
     }
 
     // Create sshd_config
-    const config = this.generateSSHDConfig('unix');
+    const config = this.generateSSHDConfig("unix");
     if (this.isLinux) {
       // Backup original config and create new one
       try {
-        await exec.exec('sudo', ['cp', configPath, `${configPath}.backup`]);
+        await exec.exec("sudo", ["cp", configPath, `${configPath}.backup`]);
       } catch (error) {
         core.warning(`Could not backup original config: ${error.message}`);
       }
@@ -183,13 +175,13 @@ class SSHServerManager {
   generateSSHDConfig(platform) {
     const sshDir = this.getSSHDirectory();
 
-    const ed25519KeyPath = platform === 'windows'
-      ? 'C:\\ProgramData\\ssh\\ssh_host_ed25519_key'
-      : path.join(sshDir, 'ssh_host_ed25519_key');
+    const ed25519KeyPath = platform === "windows"
+      ? "C:\\ProgramData\\ssh\\ssh_host_ed25519_key"
+      : path.join(sshDir, "ssh_host_ed25519_key");
 
-    const authorizedKeysPath = platform === 'windows'
-      ? 'C:\\ProgramData\\ssh\\authorized_keys'
-      : path.join(sshDir, 'authorized_keys');
+    const authorizedKeysPath = platform === "windows"
+      ? "C:\\ProgramData\\ssh\\authorized_keys"
+      : path.join(sshDir, "authorized_keys");
 
     return `
 # GitHub Actions SSH Server Configuration
@@ -203,7 +195,7 @@ PermitRootLogin no
 PasswordAuthentication no
 PubkeyAuthentication yes
 ChallengeResponseAuthentication no
-UsePAM ${platform === 'windows' ? 'no' : 'yes'}
+UsePAM ${platform === "windows" ? "no" : "yes"}
 
 # Logging
 SyslogFacility AUTH
@@ -227,15 +219,15 @@ AllowUsers ${this.sshUser}
   }
 
   async setupAuthorizedKeys() {
-    const publicKeys = core.getInput('public-keys');
-    const useActorsKeys = core.getBooleanInput('use-actor-ssh-keys');
+    const publicKeys = core.getInput("public-keys");
+    const useActorsKeys = core.getBooleanInput("use-actor-ssh-keys");
     const githubActor = process.env.GITHUB_ACTOR;
 
     let allKeys = [];
 
     // Add provided public keys
     if (publicKeys) {
-      const keys = publicKeys.split('\n').filter(key => key.trim());
+      const keys = publicKeys.split("\n").filter(key => key.trim());
       allKeys.push(...keys);
     }
 
@@ -250,12 +242,12 @@ AllowUsers ${this.sshUser}
     }
 
     if (allKeys.length === 0) {
-      throw new Error('No public keys provided. Please provide public-keys or enable use-actor-ssh-keys and ensure you have the keys in your account.');
+      throw new Error("No public keys provided. Please provide public-keys or enable use-actor-ssh-keys and ensure you have the keys in your account.");
     }
 
     // Write authorized_keys file
     const authorizedKeysPath = this.getAuthorizedKeysPath();
-    const authorizedKeysContent = allKeys.join('\n') + '\n';
+    const authorizedKeysContent = allKeys.join("\n") + "\n";
 
     // Ensure directory exists
     const dir = path.dirname(authorizedKeysPath);
@@ -272,17 +264,17 @@ AllowUsers ${this.sshUser}
 
     return new Promise((resolve, reject) => {
       https.get(url, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
+        let data = "";
+        res.on("data", chunk => data += chunk);
+        res.on("end", () => {
           if (res.statusCode === 200) {
-            const keys = data.trim().split('\n').filter(key => key.trim());
+            const keys = data.trim().split("\n").filter(key => key.trim());
             resolve(keys);
           } else {
             reject(new Error(`GitHub API returned ${res.statusCode}`));
           }
         });
-      }).on('error', reject);
+      }).on("error", reject);
     });
   }
 
@@ -303,71 +295,66 @@ AllowUsers ${this.sshUser}
   }
 
   async startWindowsSSH() {
-    core.info('Starting SSH server on Windows');
+    core.info("Starting SSH server on Windows");
 
     // Start SSH service
-    await exec.exec('powershell', [
-      '-Command',
-      'Start-Service sshd'
-    ]);
+    await exec.exec("Start-Service", ["sshd"]);
 
     // Enable service for auto-start
-    await exec.exec('powershell', [
-      '-Command',
-      'Set-Service -Name sshd -StartupType Automatic'
+    await exec.exec("Set-Service", [
+      "-Name", "sshd", "-StartupType", "Automatic",
     ]);
   }
 
   async startMacOSSSH() {
-    core.info('Starting SSH server on macOS');
+    core.info("Starting SSH server on macOS");
     const sshDir = this.getSSHDirectory();
-    const configPath = path.join(sshDir, 'sshd_config');
+    const configPath = path.join(sshDir, "sshd_config");
 
     // Start sshd with custom config
-    await exec.exec('sudo', [
-      '/usr/sbin/sshd',
-      '-D',
-      '-f', configPath,
-      '-p', this.sshPort
+    await exec.exec("sudo", [
+      "/usr/sbin/sshd",
+      "-D",
+      "-f", configPath,
+      "-p", this.sshPort,
     ], {
       detached: true,
-      stdio: 'ignore'
+      stdio: "ignore",
     });
   }
 
   async startLinuxSSH() {
-    core.info('Starting SSH server on Linux');
+    core.info("Starting SSH server on Linux");
     const sshDir = this.getSSHDirectory();
-    const configPath = path.join(sshDir, 'sshd_config_custom');
+    const configPath = path.join(sshDir, "sshd_config_custom");
 
     // Create privilege separation directory if it doesn't exist
     try {
-      await exec.exec('sudo', ['mkdir', '-p', '/run/sshd']);
+      await exec.exec("sudo", ["mkdir", "-p", "/run/sshd"]);
     } catch (error) {
       core.warning(`Could not create privilege separation directory: ${error.message}`);
     }
 
     // Start sshd with custom config
-    await exec.exec('sudo', [
-      '/usr/sbin/sshd',
-      '-D',
-      '-f', configPath,
-      '-p', this.sshPort
+    await exec.exec("sudo", [
+      "/usr/sbin/sshd",
+      "-D",
+      "-f", configPath,
+      "-p", this.sshPort,
     ], {
       detached: true,
-      stdio: 'ignore'
+      stdio: "ignore",
     });
   }
 
   async verifySSHServer() {
     try {
       if (this.isWindows) {
-        await exec.exec('powershell', [
-          '-Command',
-          `Test-NetConnection -ComputerName localhost -Port ${this.sshPort}`
+        await exec.exec("Test-NetConnection", [
+          "-ComputerName", "localhost", "-Port", `${this.sshPort}`,
         ]);
       } else {
-        await exec.exec('nc', ['-z', 'localhost', this.sshPort]);
+        await exec.exec("nc", ["-z", "localhost", this.sshPort]);
       }
       core.info(`SSH server is running on port ${this.sshPort}`);
     } catch (error) {
@@ -376,10 +363,10 @@ AllowUsers ${this.sshUser}
   }
 
   exportConnectionInfo() {
-    const hostname = 'localhost';
-    core.setOutput('hostname', hostname);
-    core.setOutput('port', this.sshPort);
-    core.setOutput('username', this.sshUser);
+    const hostname = "localhost";
+    core.setOutput("hostname", hostname);
+    core.setOutput("port", this.sshPort);
+    core.setOutput("username", this.sshUser);
 
     core.info(`SSH Connection Info:`);
     core.info(`  Host: ${hostname}`);
@@ -390,38 +377,32 @@ AllowUsers ${this.sshUser}
 
   getSSHDirectory() {
     if (this.isWindows) {
-      return 'C:\\ProgramData\\ssh';
+      return "C:\\ProgramData\\ssh";
     }
-    return path.join(os.homedir(), '.ssh');
+    return path.join(os.homedir(), ".ssh");
   }
 
   getAuthorizedKeysPath() {
     if (this.isWindows) {
-      return 'C:\\ProgramData\\ssh\\authorized_keys';
+      return "C:\\ProgramData\\ssh\\authorized_keys";
     }
-    return path.join(this.getSSHDirectory(), 'authorized_keys');
+    return path.join(this.getSSHDirectory(), "authorized_keys");
   }
 
   // Add this method to the SSHServerManager class to generate ED25519 keys
   async generateServerKeys(sshDir) {
-    core.info('Generating SSH server keys');
-    
+    core.info("Generating SSH server keys");
+
     try {
       // Generate ED25519 key
-      const edKeyPath = path.join(sshDir, 'ssh_host_ed25519_key');
-      if (this.isWindows) {
-        // Generate host keys
-        await exec.exec('powershell', [
-          '-Command',
-          `ssh-keygen -t ed25519 -f "${edKeyPath}" -N ""`
-        ]);
-      } else {
-        await exec.exec('ssh-keygen', ['-t', 'ed25519', '-f', edKeyPath, '-N', '']);
-        await exec.exec('chmod', ['600', edKeyPath]);
-        await exec.exec('chmod', ['644', `${edKeyPath}.pub`]);
+      const edKeyPath = path.join(sshDir, "ssh_host_ed25519_key");
+      await exec.exec("ssh-keygen", ["-t", "ed25519", "-f", edKeyPath, "-N", ""]);
+      if (!this.isWindows) {
+        await exec.exec("chmod", ["600", edKeyPath]);
+        await exec.exec("chmod", ["644", `${edKeyPath}.pub`]);
       }
 
-      core.info('Generated ED25519 server key');
+      core.info("Generated ED25519 server key");
     } catch (error) {
       core.warning(`Error generating server keys: ${error.message}`);
       throw error;
@@ -433,15 +414,15 @@ AllowUsers ${this.sshUser}
     const manager = new SSHServerManager();
 
     try {
-      core.info('Cleaning up SSH server...');
+      core.info("Cleaning up SSH server...");
 
       if (manager.isWindows) {
-        await exec.exec('powershell', ['-Command', 'Stop-Service sshd -Force']);
-        await exec.exec('powershell', ['-Command', 'Set-Service -Name sshd -StartupType Disabled']);
+        await exec.exec("Stop-Service", ["sshd", "-Force"]);
+        await exec.exec("Set-Service", ["-Name", "sshd", "-StartupType", "Disabled"]);
       } else {
         // Kill sshd processes on the custom port
         try {
-          await exec.exec('sudo', ['pkill', '-f', `sshd.*-p ${manager.sshPort}`]);
+          await exec.exec("sudo", ["pkill", "-f", `sshd.*-p ${manager.sshPort}`]);
         } catch (error) {
           core.warning(`Could not kill SSH processes: ${error.message}`);
         }
@@ -449,29 +430,28 @@ AllowUsers ${this.sshUser}
         // Restore original config on Linux
         if (manager.isLinux) {
           try {
-            await exec.exec('sudo', ['mv', '/etc/ssh/sshd_config.backup', '/etc/ssh/sshd_config']);
+            await exec.exec("sudo", ["mv", "/etc/ssh/sshd_config.backup", "/etc/ssh/sshd_config"]);
           } catch (error) {
             core.warning(`Could not restore original SSH config: ${error.message}`);
           }
         }
       }
 
-      core.info('SSH server cleanup completed');
+      core.info("SSH server cleanup completed");
     } catch (error) {
       core.warning(`SSH cleanup failed: ${error.message}`);
     }
   }
 }
 
-const IsPost = !!core.getState('isPost');
+const IsPost = !!core.getState("isPost");
 
 try {
   if (!IsPost) {
-    core.saveState('isPost', 'true')
+    core.saveState("isPost", "true");
     const manager = new SSHServerManager();
     await manager.run();
-  }
-  else {
+  } else {
     await SSHServerManager.cleanup();
   }
 } catch (error) {
