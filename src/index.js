@@ -85,8 +85,14 @@ class SSHServerManager {
       // Try different package managers
       const distro = await this.getLinuxDistro();
 
+      try {
+        await exec.exec("which", ["sshd"]);
+      } catch (error) {
+        core.info(`sshd is not installed, installing`);
+      }
+
       if (distro.includes("ubuntu") || distro.includes("debian")) {
-        await exec.exec("sudo", ["apt-get", "update"]);
+        await exec.exec("sudo", ["apt-get", "update", "-q"]);
         await exec.exec("sudo", ["apt-get", "install", "-y", "openssh-server"]);
       } else if (distro.includes("centos") || distro.includes("rhel") || distro.includes("fedora")) {
         await exec.exec("sudo", ["yum", "install", "-y", "openssh-server"]);
@@ -307,16 +313,11 @@ AllowUsers ${this.sshUser}
     const sshDir = this.getSSHDirectory();
     const configPath = path.join(sshDir, "sshd_config");
 
-    // Start sshd with custom config
+    // Start sshd with nohup to ensure it survives after Node.js exits
     await exec.exec("sudo", [
-      "/usr/sbin/sshd",
-      "-D",
-      "-f", configPath,
-      "-p", this.sshPort,
-    ], {
-      detached: true,
-      stdio: "ignore",
-    });
+      "sh", "-c",
+      `nohup /usr/sbin/sshd -f ${configPath} -p ${this.sshPort} > /tmp/sshd.log 2>&1 &`
+    ]);
   }
 
   async startLinuxSSH() {
@@ -331,16 +332,11 @@ AllowUsers ${this.sshUser}
       core.warning(`Could not create privilege separation directory: ${error.message}`);
     }
 
-    // Start sshd with custom config
+    // Start sshd with nohup to ensure it survives after Node.js exits
     await exec.exec("sudo", [
-      "/usr/sbin/sshd",
-      "-D",
-      "-f", configPath,
-      "-p", this.sshPort,
-    ], {
-      detached: true,
-      stdio: "ignore",
-    });
+      "sh", "-c",
+      `nohup /usr/sbin/sshd -f ${configPath} -p ${this.sshPort} > /tmp/sshd.log 2>&1 &`
+    ]);
   }
 
   async verifySSHServer() {
