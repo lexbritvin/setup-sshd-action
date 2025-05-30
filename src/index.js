@@ -55,13 +55,13 @@ class SSHServerManager {
     core.info("Installing OpenSSH Server on Windows");
     try {
       // Install OpenSSH Server
-      await exec.exec("Add-WindowsCapability", [
-        "-Online", "-Name", "OpenSSH.Server",
+      await exec.exec("powershell", [
+        "Add-WindowsCapability -Online -Name OpenSSH.Server",
       ]);
 
       // Install OpenSSH Client (if needed)
-      await exec.exec("Add-WindowsCapability", [
-        "-Online", "-Name", "OpenSSH.Client",
+      await exec.exec("powershell", [
+        "Add-WindowsCapability -Online -Name OpenSSH.Client",
       ]);
 
     } catch (error) {

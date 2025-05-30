@@ -25718,13 +25718,13 @@ class SSHServerManager {
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Installing OpenSSH Server on Windows");
     try {
       // Install OpenSSH Server
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Add-WindowsCapability", [
-        "-Online", "-Name", "OpenSSH.Server",
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", [
+        "Add-WindowsCapability -Online -Name OpenSSH.Server",
       ]);
 
       // Install OpenSSH Client (if needed)
-      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("Add-WindowsCapability", [
-        "-Online", "-Name", "OpenSSH.Client",
+      await _actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec("powershell", [
+        "Add-WindowsCapability -Online -Name OpenSSH.Client",
       ]);
 
     } catch (error) {
