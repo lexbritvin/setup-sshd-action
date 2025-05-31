@@ -148,7 +148,7 @@ class SSHServerManager {
     fs.writeFileSync(configPath, config);
   }
 
-  async configureUnixSSH(serverKey, sshDir) {
+  async configureUnixSSH(sshDir) {
     const configPath = this.isLinux ? "/etc/ssh/sshd_config" : path.join(sshDir, "sshd_config");
 
     // Generate or use provided server key
