@@ -207,7 +207,7 @@ AllowUsers ${this.sshUser}
   }
 
   async setupAuthorizedKeys() {
-    const publicKeys = core.getInput("public-keys");
+    const publicKeys = core.getInput("authorized-keys");
     const useActorsKeys = core.getBooleanInput("use-actor-ssh-keys");
     const githubActor = process.env.GITHUB_ACTOR;
 
@@ -230,7 +230,7 @@ AllowUsers ${this.sshUser}
     }
 
     if (allKeys.length === 0) {
-      throw new Error("No public keys provided. Please provide public-keys or enable use-actor-ssh-keys and ensure you have the keys in your account.");
+      throw new Error("No public keys provided. Please provide authorized-keys or enable use-actor-ssh-keys and ensure you have the keys in your account.");
     }
 
     // Write authorized_keys file
@@ -399,8 +399,9 @@ AllowUsers ${this.sshUser}
       files.forEach(file => core.info(`  - ${file}`));
 
       // Upload to artifacts
+      const artifactName = core.getInput("artifact-ssh-host-keys") || `${jobName}-ssh-host-keys`;
       await artifact.uploadArtifact(
-        `${jobName}-ssh-host-keys`,
+        artifactName,
         keys.map(key => path.join(tempDir, `${key.type}_host_key.pub`)),
         tempDir,
         { retentionDays: 1 }
