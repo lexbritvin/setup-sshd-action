@@ -89,6 +89,8 @@ class SSHServerManager {
 
       try {
         await exec.exec("which", ["sshd"]);
+        core.info(`sshd is already installed`);
+        return;
       } catch (error) {
         core.info(`sshd is not installed, installing`);
       }
@@ -399,7 +401,7 @@ AllowUsers ${this.sshUser}
       // Upload to artifacts
       await artifact.uploadArtifact(
         `${jobName}-ssh-host-keys`,
-        keys.map(key => `${key.type}_host_key.pub`),
+        keys.map(key => path.join(tempDir, `${key.type}_host_key.pub`)),
         tempDir,
         { retentionDays: 1 }
       );
