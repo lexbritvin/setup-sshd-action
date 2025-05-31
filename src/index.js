@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as https from "https";
+import { DefaultArtifactClient } from "@actions/artifact";
 
 
 class SSHServerManager {
@@ -13,7 +14,8 @@ class SSHServerManager {
     this.isMacOS = this.platform === "darwin";
     this.isLinux = this.platform === "linux";
     this.sshPort = core.getInput("port") || "2222";
-    this.sshUser = core.getInput("ssh-user") || "runner";
+    const inputUser = core.getInput("ssh-user") || ":current";
+    this.sshUser = inputUser === ":auto" ? os.userInfo().username : inputUser;
   }
 
   async run() {
@@ -33,7 +35,7 @@ class SSHServerManager {
       await this.startSSHServer();
 
       // Export connection info
-      this.exportConnectionInfo();
+      await this.exportConnectionInfo();
 
       core.info("SSH server setup completed successfully");
     } catch (error) {
@@ -114,7 +116,6 @@ class SSHServerManager {
   }
 
   async configureSSHServer() {
-    const serverKey = core.getInput("server-key");
     const sshDir = this.getSSHDirectory();
 
     // Ensure SSH directory exists
@@ -124,13 +125,13 @@ class SSHServerManager {
 
     // Configure based on platform
     if (this.isWindows) {
-      await this.configureWindowsSSH(serverKey);
+      await this.configureWindowsSSH();
     } else {
-      await this.configureUnixSSH(serverKey, sshDir);
+      await this.configureUnixSSH(sshDir);
     }
   }
 
-  async configureWindowsSSH(serverKey) {
+  async configureWindowsSSH() {
     const sshDir = "C:\\ProgramData\\ssh";
     const configPath = path.join(sshDir, "sshd_config");
 
@@ -139,13 +140,8 @@ class SSHServerManager {
       fs.mkdirSync(sshDir, { recursive: true });
     }
 
-    // Generate or use provided server key
-    if (serverKey) {
-      const keyPath = path.join(sshDir, "ssh_host_ed25519_key");
-      fs.writeFileSync(keyPath, serverKey, { mode: 0o600 });
-    } else {
-      await this.generateServerKeys(sshDir);
-    }
+    // Generate server keys.
+    await this.generateServerKeys(sshDir);
 
     // Create sshd_config
     const config = this.generateSSHDConfig("windows");
@@ -156,12 +152,7 @@ class SSHServerManager {
     const configPath = this.isLinux ? "/etc/ssh/sshd_config" : path.join(sshDir, "sshd_config");
 
     // Generate or use provided server key
-    if (serverKey) {
-      const hostKeyPath = path.join(sshDir, "ssh_host_ed25519_key");
-      fs.writeFileSync(hostKeyPath, serverKey, { mode: 0o600 });
-    } else {
-      await this.generateServerKeys(sshDir);
-    }
+    await this.generateServerKeys(sshDir);
 
     // Create sshd_config
     const config = this.generateSSHDConfig("unix");
@@ -175,10 +166,6 @@ class SSHServerManager {
   generateSSHDConfig(platform) {
     const sshDir = this.getSSHDirectory();
 
-    const ed25519KeyPath = platform === "windows"
-      ? "C:\\ProgramData\\ssh\\ssh_host_ed25519_key"
-      : path.join(sshDir, "ssh_host_ed25519_key");
-
     const authorizedKeysPath = platform === "windows"
       ? "C:\\ProgramData\\ssh\\authorized_keys"
       : path.join(sshDir, "authorized_keys");
@@ -187,8 +174,7 @@ class SSHServerManager {
 # GitHub Actions SSH Server Configuration
 Port ${this.sshPort}
 Protocol 2
-HostKey ${ed25519KeyPath}
-AuthorizedKeysFile ${authorizedKeysPath}
+AuthorizedKeysFile "${authorizedKeysPath}"
 
 # Security settings
 PermitRootLogin no
@@ -347,17 +333,76 @@ AllowUsers ${this.sshUser}
     }
   }
 
-  exportConnectionInfo() {
+  async exportConnectionInfo() {
     const hostname = "localhost";
     core.setOutput("hostname", hostname);
     core.setOutput("port", this.sshPort);
     core.setOutput("username", this.sshUser);
+
+    // Upload server public keys
+    await this.uploadServerKeys();
 
     core.info(`SSH Connection Info:`);
     core.info(`  Host: ${hostname}`);
     core.info(`  Port: ${this.sshPort}`);
     core.info(`  User: ${this.sshUser}`);
     core.info(`  Command: ssh -p ${this.sshPort} ${this.sshUser}@${hostname}`);
+  }
+
+  async getServerPublicKeys() {
+    const sshDir = this.isWindows ? "C:\\ProgramData\\ssh" : "/etc/ssh";
+    const keys = [];
+    const keyTypes = ["rsa", "ecdsa", "ed25519"];
+
+    for (const type of keyTypes) {
+      const keyPath = path.join(sshDir, `ssh_host_${type}_key.pub`);
+      if (fs.existsSync(keyPath)) {
+        keys.push({
+          type,
+          content: fs.readFileSync(keyPath, "utf8"),
+        });
+      }
+    }
+
+    return keys;
+  }
+
+  async uploadServerKeys() {
+    try {
+      const keys = await this.getServerPublicKeys();
+      if (keys.length === 0) {
+        core.warning("No server public keys found to upload");
+        return;
+      }
+
+      const artifact = new DefaultArtifactClient();
+      const jobName = process.env.GITHUB_JOB || "unknown-job";
+      const tempDir = path.join(os.tmpdir(), "ssh-keys");
+
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      // Write keys to temporary files
+      keys.forEach(key => {
+        fs.writeFileSync(
+          path.join(tempDir, `${key.type}_host_key.pub`),
+          key.content,
+        );
+      });
+
+      // Upload to artifacts
+      await artifact.uploadArtifact(
+        `${jobName}-ssh-host-keys`,
+        ["*.pub"],
+        tempDir,
+        { retentionDays: 1 }
+      );
+
+      core.info("Uploaded server public keys to artifacts");
+    } catch (error) {
+      core.warning(`Failed to upload server public keys: ${error.message}`);
+    }
   }
 
   getSSHDirectory() {
@@ -375,19 +420,18 @@ AllowUsers ${this.sshUser}
   }
 
   // Add this method to the SSHServerManager class to generate ED25519 keys
-  async generateServerKeys(sshDir) {
+  async generateServerKeys() {
     core.info("Generating SSH server keys");
 
     try {
-      // Generate ED25519 key
-      const edKeyPath = path.join(sshDir, "ssh_host_ed25519_key");
-      await exec.exec("ssh-keygen", ["-t", "ed25519", "-f", edKeyPath, "-N", ""]);
+      // Generate all server keys.
       if (!this.isWindows) {
-        await exec.exec("chmod", ["600", edKeyPath]);
-        await exec.exec("chmod", ["644", `${edKeyPath}.pub`]);
+        await exec.exec("sudo", ["ssh-keygen", "-A"]);
+      } else {
+        // On Windows, server keys are generated automatically on service start.
       }
 
-      core.info("Generated ED25519 server key");
+      core.info("Generated server keys");
     } catch (error) {
       core.warning(`Error generating server keys: ${error.message}`);
       throw error;

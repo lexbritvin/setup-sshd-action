@@ -12,13 +12,9 @@ inputs:
     default: '2222'
 
   ssh-user:
-    description: 'SSH username (default: runner)'
+    description: 'SSH username. Use :current to get the current user name (default: :current)'
     required: false
-    default: 'runner'
-
-  server-key:
-    description: 'SSH server private key (optional - will generate if not provided)'
-    required: false
+    default: ':current'
 
   public-keys:
     description: 'Authorized public keys (one per line)'
