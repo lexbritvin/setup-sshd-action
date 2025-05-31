@@ -391,6 +391,10 @@ AllowUsers ${this.sshUser}
         );
       });
 
+      // List files in tempDir
+      const files = fs.readdirSync(tempDir);
+      core.info(`Files in temporary directory (${tempDir}):`);
+      files.forEach(file => core.info(`  - ${file}`));
 
       // Upload to artifacts
       await artifact.uploadArtifact(
