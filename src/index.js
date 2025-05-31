@@ -15,7 +15,7 @@ class SSHServerManager {
     this.isLinux = this.platform === "linux";
     this.sshPort = core.getInput("port") || "2222";
     const inputUser = core.getInput("ssh-user") || ":current";
-    this.sshUser = inputUser === ":auto" ? os.userInfo().username : inputUser;
+    this.sshUser = inputUser === ":current" ? os.userInfo().username : inputUser;
   }
 
   async run() {
@@ -321,7 +321,7 @@ AllowUsers ${this.sshUser}
   async verifySSHServer() {
     try {
       if (this.isWindows) {
-        await exec.exec("", [
+        await exec.exec("powershell", [
           `Test-NetConnection -ComputerName localhost -Port ${this.sshPort}`,
         ]);
       } else {
