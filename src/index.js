@@ -391,10 +391,11 @@ AllowUsers ${this.sshUser}
         );
       });
 
+
       // Upload to artifacts
       await artifact.uploadArtifact(
         `${jobName}-ssh-host-keys`,
-        ["*.pub"],
+        keys.map(key => `${key.type}_host_key.pub`),
         tempDir,
         { retentionDays: 1 }
       );
