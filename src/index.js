@@ -172,6 +172,15 @@ class SSHServerManager {
       ? "C:\\ProgramData\\ssh\\authorized_keys"
       : path.join(sshDir, "authorized_keys");
 
+    // Define SFTP server path based on platform
+    let sftpServerPath;
+    if (platform === "windows") {
+      sftpServerPath = "C:\\Windows\\System32\\OpenSSH\\sftp-server.exe";
+    } else {
+      // Common paths for Linux distributions
+      sftpServerPath = "/usr/lib/openssh/sftp-server";
+    }
+
     return `
 # GitHub Actions SSH Server Configuration
 Port ${this.sshPort}
@@ -200,6 +209,9 @@ X11Forwarding no
 AllowTcpForwarding yes
 GatewayPorts no
 PermitTunnel no
+
+# SFTP Subsystem - Required for SCP and file transfers
+Subsystem sftp "${sftpServerPath}"
 
 # Allow specific user
 AllowUsers ${this.sshUser}
