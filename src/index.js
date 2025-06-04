@@ -353,14 +353,13 @@ AllowUsers ${this.sshUser}
     core.setOutput("port", this.sshPort);
     core.setOutput("username", this.sshUser);
 
-    // Upload server public keys
-    await this.uploadServerKeys();
+    // Export SSH host keys to a single output
+    await this.exportHostKeysToOutput();
 
     core.info(`SSH Connection Info:`);
     core.info(`  Host: ${hostname}`);
     core.info(`  Port: ${this.sshPort}`);
     core.info(`  User: ${this.sshUser}`);
-    core.info(`  Command: ssh -p ${this.sshPort} ${this.sshUser}@${hostname}`);
   }
 
   async getServerPublicKeys() {
@@ -381,47 +380,24 @@ AllowUsers ${this.sshUser}
     return keys;
   }
 
-  async uploadServerKeys() {
+  async exportHostKeysToOutput() {
     try {
       const keys = await this.getServerPublicKeys();
+
       if (keys.length === 0) {
-        core.warning("No server public keys found to upload");
+        core.warning("No server public keys found to export");
+        core.setOutput("host-keys", "");
         return;
       }
 
-      const artifact = new DefaultArtifactClient();
-      const jobName = process.env.GITHUB_JOB || "unknown-job";
-      const tempDir = path.join(os.tmpdir(), "ssh-keys");
+      // Combine all keys into a single string, separated by newlines
+      const allKeys = keys.map(key => key.content.trim()).join('\n');
 
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-
-      // Write keys to temporary files
-      keys.forEach(key => {
-        fs.writeFileSync(
-          path.join(tempDir, `${key.type}_host_key.pub`),
-          key.content,
-        );
-      });
-
-      // List files in tempDir
-      const files = fs.readdirSync(tempDir);
-      core.info(`Files in temporary directory (${tempDir}):`);
-      files.forEach(file => core.info(`  - ${file}`));
-
-      // Upload to artifacts
-      const artifactName = core.getInput("artifact-ssh-host-keys") || `${jobName}-ssh-host-keys`;
-      await artifact.uploadArtifact(
-        artifactName,
-        keys.map(key => path.join(tempDir, `${key.type}_host_key.pub`)),
-        tempDir,
-        { retentionDays: 1 }
-      );
-
-      core.info("Uploaded server public keys to artifacts");
+      core.setOutput("host-keys", allKeys);
+      core.info(`Exported ${keys.length} SSH host keys to output variable 'ssh-host-keys'`);
     } catch (error) {
-      core.warning(`Failed to upload server public keys: ${error.message}`);
+      core.warning(`Failed to export SSH host keys to output: ${error.message}`);
+      core.setOutput("host-keys", "");
     }
   }
 

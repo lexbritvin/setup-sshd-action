@@ -33,12 +33,12 @@ inputs:
 outputs:
   hostname:
     description: 'SSH server hostname'
-
   port:
     description: 'SSH server port'
-
   username:
     description: 'SSH username'
+  host-keys:
+    description: 'SSH Host public keys'
 
 runs:
   using: 'node20'
