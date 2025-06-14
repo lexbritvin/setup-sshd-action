@@ -265,6 +265,18 @@ ${windowsSpecificConfig}
     }
 
     fs.writeFileSync(authorizedKeysPath, authorizedKeysContent, { mode: 0o600 });
+
+    // Set Windows-specific permissions after creating the file
+    if (this.isWindows) {
+      await exec.exec("powershell", [
+        `icacls "${authorizedKeysPath}" /inheritance:r /remove "NT AUTHORITY\\Authenticated Users" /grant "SYSTEM:F" /grant "Administrators:F"`
+      ]);
+    } else {
+      // Set Unix permissions
+      fs.chmodSync(dir, 0o700);
+      fs.chmodSync(authorizedKeysPath, 0o600);
+    }
+
     core.info(`Configured ${allKeys.length} authorized keys`);
   }
 
