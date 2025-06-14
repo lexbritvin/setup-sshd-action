@@ -174,18 +174,25 @@ class SSHServerManager {
 
     // Define SFTP server path based on platform
     let sftpServerPath;
+    let windowsSpecificConfig = "";
     if (platform === "windows") {
       sftpServerPath = "C:\\Windows\\System32\\OpenSSH\\sftp-server.exe";
+      windowsSpecificConfig = `
+Match Group administrators
+    AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys
+`;
     } else {
-      // Common paths for Linux distributions
       sftpServerPath = "/usr/lib/openssh/sftp-server";
     }
+
+
 
     return `
 # GitHub Actions SSH Server Configuration
 Port ${this.sshPort}
 Protocol 2
 AuthorizedKeysFile "${authorizedKeysPath}"
+AuthorizedKeysFile .ssh/authorized_keys
 
 # Security settings
 PermitRootLogin no
@@ -201,8 +208,8 @@ LogLevel INFO
 # Connection settings
 ClientAliveInterval 60
 ClientAliveCountMax 3
-MaxAuthTries 3
-MaxSessions 2
+MaxAuthTries 6
+MaxSessions 10
 
 # Disable unused features
 X11Forwarding no
@@ -215,6 +222,8 @@ Subsystem sftp "${sftpServerPath}"
 
 # Allow specific user
 AllowUsers ${this.sshUser}
+
+${windowsSpecificConfig}
 `.trim();
   }
 
