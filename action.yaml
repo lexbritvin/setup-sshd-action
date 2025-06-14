@@ -19,11 +19,6 @@ inputs:
   authorized-keys:
     description: 'Authorized public keys (one per line)'
     required: false
-    
-  artifact-ssh-host-keys:
-    description: 'Name of the artifact containing uploaded host public keys. Defaults to "[job]-ssh-host-keys" if not specified'
-    required: false
-    default: ''
 
   use-actor-ssh-keys:
     description: 'Whether to authorize the public SSH keys of the user triggering the workflow'

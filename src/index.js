@@ -394,7 +394,7 @@ AllowUsers ${this.sshUser}
       const allKeys = keys.map(key => key.content.trim()).join('\n');
 
       core.setOutput("host-keys", allKeys);
-      core.info(`Exported ${keys.length} SSH host keys to output variable 'ssh-host-keys'`);
+      core.info(`Exported ${keys.length} SSH host keys to output variable 'host-keys'`);
     } catch (error) {
       core.warning(`Failed to export SSH host keys to output: ${error.message}`);
       core.setOutput("host-keys", "");
@@ -410,7 +410,8 @@ AllowUsers ${this.sshUser}
 
   getAuthorizedKeysPath() {
     if (this.isWindows) {
-      return "C:\\ProgramData\\ssh\\authorized_keys";
+      // For Windows, use admin keys file.
+      return "C:\\ProgramData\\ssh\\administrators_authorized_keys";
     }
     return path.join(this.getSSHDirectory(), "authorized_keys");
   }
